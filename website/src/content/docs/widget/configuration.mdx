@@ -152,14 +152,20 @@ interface WidgetConfig {
   autoOpen?: boolean | number; // Popup mode only. true = immediate, number = delay in ms
   locale?: string;            // 'en' | 'es' | 'hi' | 'fr' | 'de' | 'ja' | 'zh' | 'ar'
   strings?: Partial<WidgetLocaleStrings>; // Custom i18n overrides
+  preChatForm?: PreChatFormConfig; // Questions asked before the first message
 
   // Callbacks
   onOpen?: () => void;
   onClose?: () => void;
   onMessage?: (message: MessageData) => void;
   onError?: (error: Error) => void;
+  onLeadCaptured?: (leadData?: Record<string, unknown>) => void;
+  onPreChatSubmit?: (data: Record<string, string>) => void;
 }
 ```
+
+The pre-chat form and the `userData` it produces are described on the
+[Pre-Chat Form](/widget/pre-chat-form) page.
 
 ## Script Tag Attribute Reference
 

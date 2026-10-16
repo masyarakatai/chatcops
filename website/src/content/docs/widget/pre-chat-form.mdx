@@ -1,0 +1,95 @@
+---
+title: Pre-Chat Form
+description: Collect details like name and email before the conversation starts.
+---
+
+The pre-chat form asks the visitor a few questions before the first message, and sends the answers to your server as `userData` with the next chat request.
+
+The form can only be configured from JavaScript: there are no `data-*` attributes for it.
+
+## Configuration
+
+```typescript
+import ChatCops from '@chatcops/widget';
+
+ChatCops.init({
+  apiUrl: 'https://your-api.com/chat',
+  preChatForm: {
+    enabled: true,
+    title: 'Before we start...',
+    subtitle: 'Tell us a bit about yourself',
+    submitLabel: 'Start Chat',
+    fields: [
+      { name: 'name', type: 'text', label: 'Name', placeholder: 'Your name', required: true },
+      { name: 'email', type: 'email', label: 'Email', placeholder: 'you@example.com', required: true },
+      { name: 'topic', type: 'select', label: 'Topic', options: ['Sales', 'Support', 'Billing', 'Other'] },
+      { name: 'message', type: 'textarea', label: 'Message', placeholder: 'How can we help?' },
+    ],
+  },
+});
+```
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `enabled` | `boolean` | Show the form before the first message. Default: `false` |
+| `title` | `string` | Form title. Default: the locale string (`Before we start...` in `en`) |
+| `subtitle` | `string` | Text below the title. Default: the locale string (`Tell us a bit about yourself` in `en`) |
+| `submitLabel` | `string` | Submit button label. Default: the locale string (`Start Chat` in `en`) |
+| `fields` | `PreChatField[]` | The questions, in order |
+
+`title`, `subtitle` and `submitLabel` fall back to the [locale strings](/widget/i18n), so they are translated with the rest of the widget.
+
+## Fields
+
+```typescript
+interface PreChatField {
+  name: string;               // Key in the submitted data
+  type: 'text' | 'email' | 'select' | 'textarea';
+  label: string;
+  placeholder?: string;
+  required?: boolean;         // Default: false
+  options?: string[];         // select only
+}
+```
+
+- `text` and `email` render an input, `textarea` renders a three-row text area, and `select` renders a dropdown whose choices are `options`.
+- An input field takes at most 500 characters.
+- A `select` field starts with a disabled placeholder option: its `placeholder`, or `Select <label>...` when there is none.
+
+## Behavior
+
+- The form shows only when `preChatForm.enabled` is true, no conversation is loaded, and it hasn't been submitted in this browser session.
+- `required` fields and the `email` format are validated: the submit button stays disabled until every required field is filled, and the form shows the locale string for a missing required value or an invalid email. Override those with `strings.preChatRequired` and `strings.preChatInvalidEmail`.
+- A field named `name` personalizes the welcome message: with `John`, the widget greets with `Hi John! ...` instead of the plain welcome message.
+- A field named `message` is sent as the first chat message as soon as the form is submitted; the other answers are only stored for the first request.
+- The form works in both popup and inline modes.
+
+## What is sent to the server
+
+After a submit, the answers go to the server as `userData` with the next chat request. If that request fails, the next one carries them again, so the answers are not lost. The server adds them to the system prompt of that request:
+
+```
+User information: name: John, email: john@example.com, topic: Sales
+```
+
+The server accepts at most 50 fields, names up to 100 characters and values up to 500 characters.
+
+## Events
+
+When the form is submitted, `onPreChatSubmit` is called with the answers, and the `preChatSubmit` event fires:
+
+```typescript
+ChatCops.init({
+  apiUrl: 'https://your-api.com/chat',
+  preChatForm: { enabled: true, fields: [/* ... */] },
+  onPreChatSubmit: (data) => {
+    console.log('Pre-chat answers:', data);
+  },
+});
+
+ChatCops.on('preChatSubmit', (data) => {
+  analytics.track('prechat_submitted', { topic: data.topic });
+});
+```
+
+See [Events](/widget/events) for the other events and the subscription API.
